@@ -1,0 +1,2 @@
+Jira setup
+board -> https://x-0rg.atlassian.net/jira/software/projects/SCRAMX/boards/1
