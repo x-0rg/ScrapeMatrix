@@ -1,13 +1,4 @@
-# """ScrapeMatrix: Industrial Stock Analysis Desktop App."""
-# import sys
-# from PyQt6.QtWidgets import QApplication
-# from .gui import MainWindow
+"""ScrapeMatrix: Industrial Stock Analysis Desktop App."""
 
-# def main():
-#     app = QApplication(sys.argv)
-#     window = MainWindow()
-#     window.show()
-#     sys.exit(app.exec())
-
-# if __name__ == "__main__":
-#     main()
+__version__ = "0.1.0"
+__author__ = "ScrapeMatrix Contributors -x0rg"
