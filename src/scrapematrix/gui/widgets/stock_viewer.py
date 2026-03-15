@@ -27,13 +27,27 @@ class DynamicTickerCompleter(QCompleter):
         self.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self.setMaxVisibleItems(10)
         self.setModel(QStringListModel(self))
+        self.selected_country = None
 
-    def update_suggestions(self, text: str) -> None:
-        """Update suggestions based on input text."""
+    def update_suggestions(self, text: str, country: str = None) -> None:
+        """Update suggestions based on input text and optional country filter.
+
+        Args:
+            text: Search text
+            country: Optional country name to filter results
+        """
+        self.selected_country = country
+
         if not text.strip():
-            suggestions = TickerSuggestions.get_all_tickers()[:20]
+            # Get initial suggestions based on country
+            if country:
+                suggestions = TickerSuggestions.get_tickers_by_country(country)[:20]
+            else:
+                suggestions = TickerSuggestions.get_all_tickers()[:20]
         else:
-            suggestions = TickerSuggestions.search(text.upper())
+            # Search with optional country filter
+            suggestions = TickerSuggestions.search(text.upper(), country=country)
+
         self.model().setStringList(suggestions)
 
 
@@ -90,7 +104,7 @@ class StockViewer(QWidget):
         self.progress_bar.setVisible(False)
         layout.addWidget(self.progress_bar)
 
-        self.status_label = QLabel("Enter a stock ticker and click 'Fetch Data'")
+        self.status_label = QLabel("🌍 Showing stocks from all countries")
         self.status_label.setStyleSheet("color: #666; font-size: 12px;")
         layout.addWidget(self.status_label)
 
@@ -98,8 +112,19 @@ class StockViewer(QWidget):
         self.setLayout(layout)
 
     def _create_input_section(self) -> QHBoxLayout:
-        """Create input controls layout."""
+        """Create input controls layout with country selector."""
         layout = QHBoxLayout()
+
+        # Country selector dropdown
+        self.country_combo = QComboBox()
+        self.country_combo.addItem("🌍 All Countries", None)  # Default: all countries
+        for country in TickerSuggestions.get_countries():
+            self.country_combo.addItem(country, country)
+        self.country_combo.currentIndexChanged.connect(self.on_country_changed)
+
+        # Currency label (will be updated dynamically)
+        self.currency_label = QLabel("Currency: --")
+        self.currency_label.setStyleSheet("color: #666; font-size: 11px; font-weight: bold;")
 
         # Ticker input
         self.ticker_input = QLineEdit()
@@ -123,12 +148,26 @@ class StockViewer(QWidget):
             "border-radius: 4px; font-weight: bold; }"
         )
 
-        layout.addWidget(QLabel("Stock Ticker:"))
-        layout.addWidget(self.ticker_input)
-        layout.addWidget(QLabel("Period:"))
-        layout.addWidget(self.period_combo)
-        layout.addWidget(self.fetch_button)
-        layout.addStretch()
+        # Country info section (vertical layout)
+        country_section = QVBoxLayout()
+        country_row = QHBoxLayout()
+        country_row.addWidget(QLabel("Country:"))
+        country_row.addWidget(self.country_combo, 1)
+        country_row.addWidget(self.currency_label)
+        country_section.addLayout(country_row)
+
+        # Ticker section (horizontal layout)
+        ticker_section = QHBoxLayout()
+        ticker_section.addWidget(QLabel("Stock Ticker:"))
+        ticker_section.addWidget(self.ticker_input, 2)
+        ticker_section.addWidget(QLabel("Period:"))
+        ticker_section.addWidget(self.period_combo, 1)
+        ticker_section.addWidget(self.fetch_button)
+
+        # Combine sections
+        layout.addLayout(country_section, 1)
+        layout.addSpacing(20)
+        layout.addLayout(ticker_section, 2)
 
         return layout
 
@@ -156,9 +195,52 @@ class StockViewer(QWidget):
 
         return tabs
 
+    def on_country_changed(self, index: int) -> None:
+        """Handle country selection change.
+
+        Args:
+            index: Index of selected country in combo box
+        """
+        selected_country = self.country_combo.currentData()
+
+        # Update currency label and placeholder
+        if selected_country:
+            # Get country info
+            currency = TickerSuggestions.get_currency(selected_country)
+            currency_symbol = TickerSuggestions.get_currency_symbol(selected_country)
+            exchange = TickerSuggestions.get_exchange(selected_country)
+
+            # Update currency label
+            self.currency_label.setText(f"Currency: {currency_symbol} {currency}")
+
+            # Get sample tickers for placeholder
+            samples = TickerSuggestions.get_sample_tickers(selected_country, count=3)
+            samples_text = ", ".join(samples) if samples else "start typing"
+
+            # Update placeholder with dynamic examples
+            self.ticker_input.setPlaceholderText(f"e.g., {samples_text} ({exchange})")
+
+            # Update status with country details
+            country_name = self.country_combo.currentText()
+            self.status_label.setText(f"📍 {country_name} | 💱 {currency_symbol}{currency} | 📊 {exchange}")
+        else:
+            # All countries selected
+            self.currency_label.setText("Currency: Mixed")
+            self.ticker_input.setPlaceholderText("e.g., AAPL, GOOGL, MSFT (start typing)")
+            self.status_label.setText("🌍 Showing stocks from all countries")
+
+        # Clear ticker input and reset suggestions
+        self.ticker_input.clear()
+        self.on_ticker_text_changed("")
+
     def on_ticker_text_changed(self, text: str) -> None:
-        """Update suggestions when ticker input changes."""
-        self.ticker_completer.update_suggestions(text)
+        """Update suggestions when ticker input changes.
+
+        Args:
+            text: Current text in ticker input field
+        """
+        selected_country = self.country_combo.currentData()
+        self.ticker_completer.update_suggestions(text, country=selected_country)
         if text.strip():
             self.ticker_completer.setCompletionPrefix(text)
             self.ticker_completer.complete()
