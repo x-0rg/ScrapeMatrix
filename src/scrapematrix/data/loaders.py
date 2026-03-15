@@ -1,13 +1,16 @@
-"""Data loaders for various sources."""
-import yfinance as yf
+"""Stock data loading from Yahoo Finance."""
+import logging
 from typing import Optional
-from datetime import datetime, timedelta
+
 import pandas as pd
+import yfinance as yf
+
+logger = logging.getLogger(__name__)
 
 
 class StockDataLoader:
-    """Load stock data from Yahoo Finance."""
-    
+    """Load and fetch stock data from Yahoo Finance."""
+
     @staticmethod
     def fetch_stock_data(
         ticker: str,
@@ -15,38 +18,49 @@ class StockDataLoader:
         interval: str = "1d"
     ) -> Optional[pd.DataFrame]:
         """
-        Fetch stock data from Yahoo Finance.
-        
+        Fetch historical stock data from Yahoo Finance.
+
         Args:
-            ticker: Stock ticker symbol (e.g., 'AAPL', 'GOOGL')
-            period: Data period ('1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max')
-            interval: Data interval ('1m', '5m', '15m', '30m', '60m', '1d', '1wk', '1mo', '3mo')
-        
+            ticker: Stock ticker symbol (e.g., 'AAPL', 'GOOGL', 'MSFT')
+            period: Data period - '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'
+            interval: Data interval - '1m', '5m', '15m', '30m', '60m', '1d', '1wk', '1mo', '3mo'
+
         Returns:
-            DataFrame with OHLCV data, or None if failed
+            DataFrame with OHLCV (Open, High, Low, Close, Volume) data, or None if fetch fails.
         """
         try:
             stock = yf.Ticker(ticker)
             hist = stock.history(period=period, interval=interval)
-            
+
             if hist.empty:
+                logger.warning(f"No data returned for {ticker}")
                 return None
-            
+
             return hist
         except Exception as e:
-            print(f"Error fetching stock data for {ticker}: {e}")
+            logger.error(f"Error fetching stock data for {ticker}: {e}")
             return None
-    
+
     @staticmethod
     def get_stock_info(ticker: str) -> dict:
         """
-        Get stock information (company name, sector, price, etc).
-        
+        Fetch stock metadata and financial information.
+
         Args:
             ticker: Stock ticker symbol
-        
+
         Returns:
-            Dictionary with stock info
+            Dictionary with company info:
+                - name: Company name
+                - current_price: Current stock price
+                - previous_close: Previous trading day close
+                - open: Today's opening price
+                - high_52w: 52-week high
+                - low_52w: 52-week low
+                - market_cap: Market capitalization
+                - pe_ratio: Price-to-earnings ratio
+                - dividend_yield: Dividend yield percentage
+                - sector: Industry sector
         """
         try:
             stock = yf.Ticker(ticker)
@@ -63,5 +77,5 @@ class StockDataLoader:
                 "sector": stock.info.get("sector", "N/A"),
             }
         except Exception as e:
-            print(f"Error fetching stock info for {ticker}: {e}")
+            logger.error(f"Error fetching stock info for {ticker}: {e}")
             return {}

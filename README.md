@@ -1,7 +1,52 @@
 # ScrapeMatrix
-ScrapeMatrix - Industrial-Grade Stock Analysis Desktop App
 
-### RAG Architecture
+Industrial-Grade Stock Analysis Desktop Application
+
+## 📸 Application Preview
+
+![ScrapeMatrix Stock Viewer - Real-time stock data visualization with interactive charts and company information](./docs/snaps/stock_viewer_screenshot.png)
+
+## ✨ Features
+
+- 📈 **Real-time Stock Data** - Fetch live stock information using Yahoo Finance API
+- 🎯 **Smart Ticker Suggestions** - Dynamic autocomplete with 70+ popular stocks
+- 📊 **Interactive Charts** - Matplotlib integration for price visualization
+- ⚡ **Non-blocking UI** - Background threading for responsive interface
+- 🎨 **Professional Design** - PyQt6-based desktop application
+- 🔄 **Threading** - Smooth data fetching without freezing UI
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+pip install -e .
+```
+
+### Run Application
+
+```bash
+python -m scrapematrix
+```
+
+## 📚 Documentation
+
+- [Start Here](./docs/START_HERE.md) - Quick overview
+- [Quick Reference](./docs/QUICK_REFERENCE.md) - Common commands
+- [How to Add Images](./docs/HOW_TO_ADD_IMAGES.md) - Guide for README
+- [Complete Index](./docs/INDEX.md) - All documentation
+
+## 🛠️ Technology Stack
+
+- **Python 3.8+** - Programming language
+- **PyQt6** - Desktop GUI framework
+- **yfinance** - Stock data API
+- **pandas** - Data manipulation
+- **matplotlib** - Data visualization
+
+---
+
+## 🗂️ RAG Architecture (Planned)
 ```
 rag_project/
 ├── data/                      # Raw documents (PDFs, text files)
@@ -25,3 +70,4 @@ rag_project/
 └── .env                       # API keys (OpenAI, Pinecone, etc.)
 
 ```
+

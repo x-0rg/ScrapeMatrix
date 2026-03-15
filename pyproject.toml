@@ -12,6 +12,9 @@ authors = [{name = "ScrapeMatrix Contributors"}]
 requires-python = ">=3.8"
 dependencies = [
     "PyQt6>=6.6.1",
+    "matplotlib>=3.7.0",
+    "pandas>=1.5.0",
+    "yfinance>=0.2.32",
 ]
 
 [project.scripts]
