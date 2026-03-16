@@ -27,26 +27,26 @@ class DynamicTickerCompleter(QCompleter):
         self.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self.setMaxVisibleItems(10)
         self.setModel(QStringListModel(self))
-        self.selected_country = None
+        self.selected_exchange = None
 
-    def update_suggestions(self, text: str, country: str = None) -> None:
-        """Update suggestions based on input text and optional country filter.
+    def update_suggestions(self, text: str, exchange: str = None) -> None:
+        """Update suggestions based on input text and optional exchange filter.
 
         Args:
             text: Search text
-            country: Optional country name to filter results
+            exchange: Optional exchange name to filter results
         """
-        self.selected_country = country
+        self.selected_exchange = exchange
 
         if not text.strip():
-            # Get initial suggestions based on country
-            if country:
-                suggestions = TickerSuggestions.get_tickers_by_country(country)[:20]
+            # Get initial suggestions based on exchange
+            if exchange:
+                suggestions = TickerSuggestions.get_tickers_by_exchange(exchange)[:20]
             else:
                 suggestions = TickerSuggestions.get_all_tickers()[:20]
         else:
-            # Search with optional country filter
-            suggestions = TickerSuggestions.search(text.upper(), country=country)
+            # Search with optional exchange filter
+            suggestions = TickerSuggestions.search(text.upper(), exchange=exchange)
 
         self.model().setStringList(suggestions)
 
@@ -112,15 +112,31 @@ class StockViewer(QWidget):
         self.setLayout(layout)
 
     def _create_input_section(self) -> QHBoxLayout:
-        """Create input controls layout with country selector."""
+        """Create input controls layout with exchange selector."""
         layout = QHBoxLayout()
 
-        # Country selector dropdown
-        self.country_combo = QComboBox()
-        self.country_combo.addItem("🌍 All Countries", None)  # Default: all countries
-        for country in TickerSuggestions.get_countries():
-            self.country_combo.addItem(country, country)
-        self.country_combo.currentIndexChanged.connect(self.on_country_changed)
+        # Exchange selector dropdown - sorted by region
+        self.exchange_combo = QComboBox()
+        self.exchange_combo.addItem("🌍 All Global Exchanges", None)  # Default: all exchanges
+
+        # Sort exchanges by region for better organization
+        exchanges = TickerSuggestions.get_exchanges()
+        exchanges_by_region = {}
+
+        for exchange in sorted(exchanges):
+            region = TickerSuggestions.get_region(exchange)
+            if region not in exchanges_by_region:
+                exchanges_by_region[region] = []
+            exchanges_by_region[region].append(exchange)
+
+        # Add exchanges grouped by region
+        for region in sorted(exchanges_by_region.keys()):
+            for exchange in exchanges_by_region[region]:
+                country = TickerSuggestions.get_country(exchange)
+                display_text = f"{exchange} - {country}"
+                self.exchange_combo.addItem(display_text, exchange)
+
+        self.exchange_combo.currentIndexChanged.connect(self.on_exchange_changed)
 
         # Currency label (will be updated dynamically)
         self.currency_label = QLabel("Currency: --")
@@ -148,13 +164,13 @@ class StockViewer(QWidget):
             "border-radius: 4px; font-weight: bold; }"
         )
 
-        # Country info section (vertical layout)
-        country_section = QVBoxLayout()
-        country_row = QHBoxLayout()
-        country_row.addWidget(QLabel("Country:"))
-        country_row.addWidget(self.country_combo, 1)
-        country_row.addWidget(self.currency_label)
-        country_section.addLayout(country_row)
+        # Exchange info section (vertical layout)
+        exchange_section = QVBoxLayout()
+        exchange_row = QHBoxLayout()
+        exchange_row.addWidget(QLabel("Exchange:"))
+        exchange_row.addWidget(self.exchange_combo, 1)
+        exchange_row.addWidget(self.currency_label)
+        exchange_section.addLayout(exchange_row)
 
         # Ticker section (horizontal layout)
         ticker_section = QHBoxLayout()
@@ -165,7 +181,7 @@ class StockViewer(QWidget):
         ticker_section.addWidget(self.fetch_button)
 
         # Combine sections
-        layout.addLayout(country_section, 1)
+        layout.addLayout(exchange_section, 1)
         layout.addSpacing(20)
         layout.addLayout(ticker_section, 2)
 
@@ -195,39 +211,45 @@ class StockViewer(QWidget):
 
         return tabs
 
-    def on_country_changed(self, index: int) -> None:
-        """Handle country selection change.
+    def on_exchange_changed(self, index: int) -> None:
+        """Handle exchange selection change.
 
         Args:
-            index: Index of selected country in combo box
+            index: Index of selected exchange in combo box
         """
-        selected_country = self.country_combo.currentData()
+        selected_exchange = self.exchange_combo.currentData()
 
         # Update currency label and placeholder
-        if selected_country:
-            # Get country info
-            currency = TickerSuggestions.get_currency(selected_country)
-            currency_symbol = TickerSuggestions.get_currency_symbol(selected_country)
-            exchange = TickerSuggestions.get_exchange(selected_country)
+        if selected_exchange:
+            # Get exchange info
+            currency = TickerSuggestions.get_currency(selected_exchange)
+            currency_symbol = TickerSuggestions.get_currency_symbol(selected_exchange)
+            country = TickerSuggestions.get_country(selected_exchange)
+            region = TickerSuggestions.get_region(selected_exchange)
+            timezone = TickerSuggestions.get_timezone(selected_exchange)
+            market_hours = TickerSuggestions.get_market_hours(selected_exchange)
 
             # Update currency label
-            self.currency_label.setText(f"Currency: {currency_symbol} {currency}")
+            self.currency_label.setText(f"💱 {currency_symbol} {currency}")
 
             # Get sample tickers for placeholder
-            samples = TickerSuggestions.get_sample_tickers(selected_country, count=3)
+            samples = TickerSuggestions.get_sample_tickers(selected_exchange, count=3)
             samples_text = ", ".join(samples) if samples else "start typing"
 
             # Update placeholder with dynamic examples
-            self.ticker_input.setPlaceholderText(f"e.g., {samples_text} ({exchange})")
+            self.ticker_input.setPlaceholderText(f"e.g., {samples_text}")
 
-            # Update status with country details
-            country_name = self.country_combo.currentText()
-            self.status_label.setText(f"📍 {country_name} | 💱 {currency_symbol}{currency} | 📊 {exchange}")
+            # Update status with comprehensive exchange details
+            exchange_name = self.exchange_combo.currentText()
+            self.status_label.setText(
+                f"📊 {selected_exchange} | 🌍 {country} ({region}) | 💱 {currency_symbol}{currency} | "
+                f"🕐 {timezone} | ⏰ {market_hours}"
+            )
         else:
-            # All countries selected
-            self.currency_label.setText("Currency: Mixed")
-            self.ticker_input.setPlaceholderText("e.g., AAPL, GOOGL, MSFT (start typing)")
-            self.status_label.setText("🌍 Showing stocks from all countries")
+            # All exchanges selected
+            self.currency_label.setText("💱 Mixed")
+            self.ticker_input.setPlaceholderText("e.g., AAPL, GOOGL, MSFT, 0700 (Hong Kong), SAP (Germany)")
+            self.status_label.setText("🌍 Showing stocks from all global exchanges (40+ exchanges)")
 
         # Clear ticker input and reset suggestions
         self.ticker_input.clear()
@@ -239,11 +261,8 @@ class StockViewer(QWidget):
         Args:
             text: Current text in ticker input field
         """
-        selected_country = self.country_combo.currentData()
-        self.ticker_completer.update_suggestions(text, country=selected_country)
-        if text.strip():
-            self.ticker_completer.setCompletionPrefix(text)
-            self.ticker_completer.complete()
+        selected_exchange = self.exchange_combo.currentData()
+        self.ticker_completer.update_suggestions(text, exchange=selected_exchange)
 
     def fetch_stock(self) -> None:
         """Fetch stock data from Yahoo Finance."""
