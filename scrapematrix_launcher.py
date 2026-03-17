@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""ScrapeMatrix Application Entry Point.
+"""ScrapeMatrix Application Entry Point - Standalone executable version.
 
-Run as: python -m scrapematrix
+This script is used as the entry point when PyInstaller creates the executable.
+It handles both relative and absolute imports properly.
 """
-import logging
 import sys
+import logging
 from pathlib import Path
 
-from PyQt6.QtWidgets import QApplication
+# Add the src directory to the path for absolute imports
+current_dir = Path(__file__).parent
+src_dir = current_dir / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
 
-# Handle both relative imports (for python -m) and absolute imports
-try:
-    from .gui.main_window import MainWindow
-except ImportError:
-    # Fallback for PyInstaller or direct execution
-    from scrapematrix.gui.main_window import MainWindow
+# Now import the application
+from PyQt6.QtWidgets import QApplication
+from scrapematrix.gui.main_window import MainWindow
 
 logger = logging.getLogger(__name__)
 
@@ -47,4 +49,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

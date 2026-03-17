@@ -1,0 +1,25 @@
+# Build Requirements for ScrapeMatrix Executables
+#
+# This file specifies all dependencies needed to build
+# standalone executables using PyInstaller
+#
+# Install with:
+#   pip install -r requirements/build.txt
+
+# Core application dependencies
+PyQt6>=6.6.1
+matplotlib>=3.7.0
+pandas>=1.5.0
+yfinance>=0.2.32
+
+# Build tools
+PyInstaller>=5.13.0
+
+# Optional: Compression and optimization
+upx-upx>=4.2.4  # UPX compressor for smaller executables (optional)
+
+# Optional: Icon conversion
+Pillow>=10.0.0  # For icon conversion PNG → ICO (optional)
+
+# Optional: Windows installer creation (Windows only)
+# nsis>=3.0.0  # Must be installed separately from https://nsis.sourceforge.io/
