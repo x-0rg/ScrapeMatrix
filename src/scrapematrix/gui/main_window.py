@@ -2,7 +2,7 @@
 from PyQt6.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout, QLabel
 from PyQt6.QtCore import Qt
 
-from .widgets import StockViewer
+from .widgets import StockViewer, RAGChatWidget
 
 
 class MainWindow(QMainWindow):
@@ -29,6 +29,10 @@ class MainWindow(QMainWindow):
         self.stock_viewer = StockViewer()
         self.tabs.addTab(self.stock_viewer, "📊 Stock Viewer")
 
+        # RAG Chat tab
+        self.rag_chat = RAGChatWidget()
+        self.tabs.addTab(self.rag_chat, "🤖 RAG Chat")
+
         main_layout.addWidget(self.tabs)
         central_widget.setLayout(main_layout)
 
@@ -40,14 +44,15 @@ class MainWindow(QMainWindow):
         home_label = QLabel(
             "🎯 ScrapeMatrix - Industrial Stock Analysis\n\n"
             "📈 Stock Viewer: Real-time stock data and charts\n"
-            "🤖 Agents: AI-powered stock analysis (coming soon)\n"
-            "🔍 RAG: Retrieval-augmented generation (coming soon)"
+            "🤖 RAG Chat: Document upload & knowledge base Q&A\n"
+            "🔍 Future: AI-powered stock analysis agents"
         )
         home_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         home_label.setStyleSheet("font-size: 14px; color: #10B981; line-height: 1.8;")
 
         home_layout.addWidget(home_label)
         home_layout.addStretch()
+
         home_widget.setLayout(home_layout)
 
         self.tabs.addTab(home_widget, "🏠 Home")
