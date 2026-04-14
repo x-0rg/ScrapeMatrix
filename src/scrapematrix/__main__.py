@@ -25,6 +25,9 @@ def setup_logging() -> None:
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+    # Attach our GUI log handler so we capture logs before the window opens
+    from scrapematrix.gui.widgets.log_viewer import global_log_handler
+    logging.getLogger().addHandler(global_log_handler)
 
 
 def main() -> None:

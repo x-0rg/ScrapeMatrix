@@ -11,10 +11,10 @@ from PyQt6.QtWidgets import (
     QListWidget, QListWidgetItem, QSplitter, QTabWidget
 )
 
-from ..rag.knowledge_base import KnowledgeBase
-from ..rag.document_processor import DocumentProcessor
-from ..rag.retriever import RetrieverSystem
-from ..rag.chat_engine import RAGChatEngine
+from scrapematrix.rag.knowledge_base import KnowledgeBase
+from scrapematrix.rag.document_processor import DocumentProcessor
+from scrapematrix.rag.retriever import RetrieverSystem
+from scrapematrix.rag.chat_engine import RAGChatEngine
 
 logger = logging.getLogger(__name__)
 
